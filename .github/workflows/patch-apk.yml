@@ -66,22 +66,8 @@ jobs:
           echo "✓ Patched APK: $(ls -lh ${{ github.event.inputs.output_name }})"
 
       - name: Upload patched APK
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: patched-${{ github.event.inputs.game_name }}
           path: ${{ github.event.inputs.output_name }}
           retention-days: 7
-
-      - name: Create summary
-        run: |
-          echo "## ✅ APK Patching Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Game:** ${{ github.event.inputs.game_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Input:** ${{ github.event.inputs.apk_file }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Output:** ${{ github.event.inputs.output_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Signed:** ${{ github.event.inputs.sign_apk }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Patches Applied" >> $GITHUB_STEP_SUMMARY
-          echo "- Resolution: 360×806px" >> $GITHUB_STEP_SUMMARY
-          echo "- DPI: 160dpi" >> $GITHUB_STEP_SUMMARY
-          echo "- FPS Cap: 60fps" >> $GITHUB_STEP_SUMMARY

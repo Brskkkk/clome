@@ -11,19 +11,12 @@ repositories {
 }
 
 dependencies {
-    // Baksmali/Smali for DEX manipulation
     implementation("org.smali:baksmali:2.5.2")
     implementation("org.smali:smali:2.5.2")
     implementation("org.smali:dexlib2:2.5.2")
-    
-    // Logging
     implementation("org.slf4j:slf4j-api:2.0.9")
     implementation("org.slf4j:slf4j-simple:2.0.9")
-    
-    // CLI
     implementation("com.github.ajalt.clikt:clikt:4.1.1")
-    
-    // Coroutines for async tasks
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 }
 

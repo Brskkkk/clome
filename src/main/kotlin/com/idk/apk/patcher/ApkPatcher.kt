@@ -97,7 +97,6 @@ class ApkPatcher(private val verbose: Boolean = false) {
     private fun patchSmaliDirectory(smaliDir: File) {
         var filesPatched = 0
 
-        // Patch all smali files
         smaliDir.walk()
             .filter { it.isFile && it.name.endsWith(".smali") }
             .forEach { smaliFile ->
@@ -113,14 +112,12 @@ class ApkPatcher(private val verbose: Boolean = false) {
         var content = smaliFile.readText()
         val originalContent = content
 
-        // Patch 1: Replace DisplayMetrics instantiation
         content = content.replace(
             Regex("""new-instance\s+([vp]\d+),\s*Landroid/util/DisplayMetrics;"""),
             """invoke-static {}, Lcom/idk/gamecloner/MetricsHook;->createSpoofedMetrics()Landroid/util/DisplayMetrics;
     move-result-object ${'$'}1"""
         )
 
-        // Patch 2: Override getResources() in Activities
         if (content.contains("Landroid/app/Activity;")) {
             val hookMethod = """
 
@@ -137,12 +134,6 @@ class ApkPatcher(private val verbose: Boolean = false) {
                 content = content.replace(".end class", "$hookMethod\n.end class")
             }
         }
-
-        // Patch 3: Replace Display.getMetrics calls
-        content = content.replace(
-            Regex("""invoke-virtual\s+\{([^}]*)\},\s*Landroid/view/Display;->getMetrics\(Landroid/util/DisplayMetrics;\)V"""),
-            """invoke-static {${'$'}1}, Lcom/idk/gamecloner/MetricsHook;->applySpoofedMetrics(Landroid/content/res/Resources;)V"""
-        )
 
         if (content != originalContent) {
             smaliFile.writeText(content)
@@ -161,9 +152,6 @@ class ApkPatcher(private val verbose: Boolean = false) {
                 val options = org.jf.smali.SmaliOptions()
                 Smali.assembleSmaliFiles(setOf(smaliDir), outputDex, null, options)
                 log("  ✓ Recompiled $dexName.dex")
-
-                // Remove original DEX
-                File(workDir, "$dexName.dex.bak").delete()
             } catch (e: Exception) {
                 log("  ⚠️  Error recompiling $dexName: ${e.message}")
             }
@@ -176,7 +164,6 @@ class ApkPatcher(private val verbose: Boolean = false) {
                 if (file.isFile) {
                     val relativePath = file.relativeTo(workDir).path.replace(File.separator, "/")
                     
-                    // Skip smali directories (already compiled to DEX)
                     if (!relativePath.contains("smali")) {
                         val entry = ZipEntry(relativePath)
                         zip.putNextEntry(entry)
@@ -194,7 +181,6 @@ class ApkPatcher(private val verbose: Boolean = false) {
 
         if (!debugKeystore.exists()) {
             log("  ⚠️  Debug keystore not found - skipping signing")
-            log("  Generate with: keytool -genkey -v -keystore ~/.android/debug.keystore -keyalg RSA -keysize 2048 -validity 10000 -alias androiddebugkey")
             return
         }
 
@@ -216,8 +202,6 @@ class ApkPatcher(private val verbose: Boolean = false) {
 
             if (exitCode == 0) {
                 log("  ✓ Signed with debug key")
-            } else {
-                log("  ⚠️  Signing failed with exit code $exitCode")
             }
         } catch (e: Exception) {
             log("  ⚠️  Signing error: ${e.message}")
