@@ -1,0 +1,87 @@
+name: Patch APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      apk_file:
+        description: 'APK filename (must be in repo or uploaded)'
+        required: true
+      output_name:
+        description: 'Output APK name'
+        required: false
+        default: 'patched.apk'
+      sign_apk:
+        description: 'Sign the APK?'
+        required: false
+        default: 'false'
+      game_name:
+        description: 'Game name (for reference)'
+        required: false
+        default: 'game'
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+          cache: gradle
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Build patcher
+        run: ./gradlew build -x test
+
+      - name: Check if APK exists
+        run: |
+          if [ ! -f "${{ github.event.inputs.apk_file }}" ]; then
+            echo "❌ APK file not found: ${{ github.event.inputs.apk_file }}"
+            ls -la
+            exit 1
+          fi
+          echo "✓ APK found: $(ls -lh ${{ github.event.inputs.apk_file }})"
+
+      - name: Patch APK
+        run: |
+          java -jar build/libs/apk-patcher-1.0.0.jar \
+            "${{ github.event.inputs.apk_file }}" \
+            "${{ github.event.inputs.output_name }}" \
+            ${{ github.event.inputs.sign_apk == 'true' && '--sign' || '' }} \
+            -v
+
+      - name: Verify patched APK
+        run: |
+          if [ ! -f "${{ github.event.inputs.output_name }}" ]; then
+            echo "❌ Patched APK not created"
+            exit 1
+          fi
+          echo "✓ Patched APK: $(ls -lh ${{ github.event.inputs.output_name }})"
+
+      - name: Upload patched APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: patched-${{ github.event.inputs.game_name }}
+          path: ${{ github.event.inputs.output_name }}
+          retention-days: 7
+
+      - name: Create summary
+        run: |
+          echo "## ✅ APK Patching Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Game:** ${{ github.event.inputs.game_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Input:** ${{ github.event.inputs.apk_file }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Output:** ${{ github.event.inputs.output_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Signed:** ${{ github.event.inputs.sign_apk }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Patches Applied" >> $GITHUB_STEP_SUMMARY
+          echo "- Resolution: 360×806px" >> $GITHUB_STEP_SUMMARY
+          echo "- DPI: 160dpi" >> $GITHUB_STEP_SUMMARY
+          echo "- FPS Cap: 60fps" >> $GITHUB_STEP_SUMMARY

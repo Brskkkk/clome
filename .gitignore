@@ -1,0 +1,26 @@
+# Build
+build/
+.gradle/
+*.jar
+*.war
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project
+apk_work_*/
+*.apk
+*.bak
+debug.keystore
+
+# Temp
+*.tmp
+*.log
